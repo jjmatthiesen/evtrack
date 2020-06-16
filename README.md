@@ -3,6 +3,12 @@
 Event tracking on websites using plain old JavaScript.
 No third-party libraries or external dependencies. :smiley:
 
+## Forked version
+Record events in regular timestamps. This enables likewise a more detailed recording of pauses through the repetition of the same coordinates. 
+Events are recorded and stored in  TrackUI.states.
+Furthermore, scroll speed will be also recorded. 
+
+
 ## Usage
 
 * For web pages:

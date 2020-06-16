@@ -1,12 +1,38 @@
 /*! evtrack -- UI module */
 (function(window){
 
+var checkScrollSpeed = (function(settings){
+  settings = settings || {};
+
+  var lastPos, newPos, timer, delta,
+      delay = settings.delay || 50; // in "ms" (higher means lower fidelity )
+
+  function clear() {
+    lastPos = null;
+    delta = 0;
+  }
+
+  clear();
+
+  return function(){
+    newPos = window.scrollY;
+    if ( lastPos != null ){ // && newPos < maxScroll
+      delta = newPos -  lastPos;
+    }
+    lastPos = newPos;
+    clearTimeout(timer);
+    timer = setTimeout(clear, delay);
+    return delta;
+  };
+})();
 var document = window.document;
+const _mouseEvents = "mousedown mouseup mousemove mouseover mouseout mousewheel mouseenter click dblclick ";
+const _touchEvent = "touchstart touchend touchmove ";
+const _keyboardEvents = "keydown keyup keypress ";
+const _documentEvents = "scroll change select submit reset contextmenu cut copy paste ";
 
 // Define default events, as if they were set in `settings` object
-var _docEvents  = "mousedown mouseup mousemove mouseover mouseout mousewheel ";
-    _docEvents += "touchstart touchend touchmove keydown keyup keypress ";
-    _docEvents += "click dblclick scroll change select submit reset contextmenu cut copy paste";
+var _docEvents  = _mouseEvents + _touchEvent + _keyboardEvents + _documentEvents;
 var _winEvents  = "load unload beforeunload blur focus resize error online offline";
 // Convert these event lists to actual array lists
 _docEvents = _docEvents.split(" ");
@@ -74,7 +100,31 @@ var TrackUI = {
     debug: false
   },
   /**
-   * Init method. Registers event listeners.
+   * Additional settings for the record of events.
+   */
+  states: {
+    i: 0,
+    rec: null,
+    paused: false,
+    timeout: null,
+    clicked: false,
+    coords: { x:0, y:0 },
+    elemXpath: null,
+    elemAttrs: null,
+    mouseEventName: null,
+    touchEventName: null,
+    keyboardEventName: null,
+    // load, unload, beforeunload, blur, focus, resize, error, online, offline
+    windowEventName: null,
+    // scroll, change, select, submit, reset, contextmenu, cut, copy, paste,
+    documentEventName: null,
+    scrollSpeed: null,
+    lastPos: undefined,
+    newPos: undefined,
+    delta: undefined
+  },
+  /**
+   * Init method. Registers event listeners. Set initial coordinates.
    * @param {object} config  Tracking Settings
    * @return void
    */
@@ -88,9 +138,49 @@ var TrackUI = {
     }
     TrackUI.log("Recording starts...", _time, TrackUI.settings);
     TrackUI.addEventListeners();
+    const interval = Math.round(TrackUI.pollingMs);
+    TrackUI.rec   = setInterval(TrackUI.recMouse, interval);
+    const onMove = function(e) {
+      if (e.touches) { e = e.touches[0] || e.targetTouches[0]; }
+      TrackUI.getMousePos(e);
+      TrackUI.findElement(e); // elements hovered
+    };
     setTimeout(function(){
       TrackUI.initNewData(true);
     }, TrackUI.settings.postInterval*1000);
+  },
+  /**
+   * Pauses recording.
+   * The mouse activity is tracked only when the current window has focus.
+   */
+  pauseRecording: function()
+  {
+    TrackUI.states.paused = true;
+  },
+  /**
+   * Resumes recording. The current window gain focus.
+   */
+  resumeRecording: function()
+  {
+    TrackUI.states.paused = false;
+  },
+  /**
+   * Records mouse data using a regular time interval (TrackUI.pollingMs)
+   */
+  recMouse: function() {
+    const TrackUIRec = TrackUI.states;
+    const timeNow  = new Date().getTime();
+    if (TrackUIRec.paused) {
+      return;
+    }
+    if(TrackUIRec.timeout) {
+      while (TrackUIRec.i <= TrackUIRec.timeout) {
+        TrackUI.fillInfo(timeNow, TrackUIRec.coords.x, TrackUIRec.coords.y, TrackUIRec.clicked, TrackUIRec.mouseEventName, TrackUIRec.scrollSpeed, TrackUIRec.elemXpath, TrackUIRec.elemAttrs);
+      }
+    } else {
+      TrackUI.fillInfo(timeNow, TrackUIRec.coords.x, TrackUIRec.coords.y, TrackUIRec.clicked, TrackUIRec.mouseEventName, TrackUIRec.scrollSpeed, TrackUIRec.elemXpath, TrackUIRec.elemAttrs);
+    }
+    TrackUIRec.i++ ;
   },
   /**
    * Adds required event listeners.
@@ -112,6 +202,28 @@ var TrackUI = {
       TrackUI.settings.pollingEvents = TrackUI.settings.pollingEvents.split(" ");
       TrackUI.addCustomEventListeners(TrackUI.settings.pollingEvents);
     }
+    document.addEventListener('keydown', (event) => {
+      const keyName = event.key;
+      if (keyName === "End") {
+        if (TrackUI.states.paused) {
+          TrackUI.resumeRecording();
+        } else {
+          TrackUI.pauseRecording();
+        }
+      }
+    }, false);
+    document.addEventListener('mouseleave', (event) => {
+      TrackUI.pauseRecording();
+    },false);
+    document.addEventListener('mouseenter', (event) => {
+      TrackUI.resumeRecording();
+    },false);
+
+    window.addEventListener('scroll', (event) => {
+      TrackUI.states.scrollSpeed = checkScrollSpeed();
+      //console.log(TrackUI.states.scrollSpeed);
+    }, false);
+
     // Flush data on closing the window/tab
     var unload = (typeof window.onbeforeunload === 'function') ? "beforeunload" : "unload";
     TrackLib.Events.add(window, unload, TrackUI.flush);
@@ -131,8 +243,8 @@ var TrackUI = {
         // This is for IE compatibility, grrr
         if (document.attachEvent) {
           // See http://todepoint.com/blog/2008/02/18/windowonblur-strange-behavior-on-browsers/
-          if (ev == "focus") TrackLib.Events.add(document.body, "focusin", TrackUI.winHandler);
-          if (ev == "blur") TrackLib.Events.add(document.body, "focusout", TrackUI.winHandler);
+          if (ev === "focus") TrackLib.Events.add(document.body, "focusin", TrackUI.winHandler);
+          if (ev === "blur") TrackLib.Events.add(document.body, "focusout", TrackUI.winHandler);
         }
       } else if (_winEvents.indexOf(ev) > -1) {
         TrackLib.Events.add(window, ev, TrackUI.winHandler);
@@ -189,6 +301,7 @@ var TrackUI = {
    * @return void
    */
   appendData: function(async) {
+    TrackUI.log("appendUserDataTo:", _uid);
     var data  = "uid="     + _uid;
         data += "&info="   + encodeURIComponent(_info.join(INFO_SEPARATOR));
         data += "&action=" + "append";
@@ -246,7 +359,8 @@ var TrackUI = {
     }
 
     if (register) {
-      var cursorPos = TrackUI.getMousePos(e)
+      const TrackUIRec = TrackUI.states;
+      let cursorPos = TrackUI.getMousePos(e)
         , elemXpath = TrackLib.XPath.getXPath(e.target)
         , elemAttrs = TrackUI.settings.saveAttributes ? TrackLib.Util.serializeAttrs(e.target) : '{}'
         , extraInfo = {}
@@ -254,8 +368,18 @@ var TrackUI = {
       if (typeof TrackUI.settings.callback === 'function') {
         extraInfo = TrackUI.settings.callback(e);
       }
-      TrackUI.fillInfo(e.id, timeNow, cursorPos.x, cursorPos.y, eventName, elemXpath, elemAttrs, JSON.stringify(extraInfo));
-      _time = timeNow;
+      // update states, then read states in regular time intervals -> recMouse()
+      TrackUIRec.coords.x = cursorPos.x;
+      TrackUIRec.coords.y = cursorPos.y;
+      TrackUIRec.elemXpath = elemXpath;
+      TrackUIRec.elemAttrs = elemAttrs;
+      if (eventName === 'mousedown') {
+        TrackUIRec.clicked = true;
+      } else {
+        TrackUIRec.clicked = false;
+      }
+      TrackUIRec.mouseEventName = eventName;
+
     }
   },
   /**
