@@ -138,7 +138,7 @@ var TrackUI = {
     }
     TrackUI.log("Recording starts...", _time, TrackUI.settings);
     TrackUI.addEventListeners();
-    const interval = Math.round(TrackUI.pollingMs);
+    const interval = Math.round(TrackUI.settings.pollingMs);
     TrackUI.rec   = setInterval(TrackUI.recMouse, interval);
     const onMove = function(e) {
       if (e.touches) { e = e.touches[0] || e.targetTouches[0]; }
