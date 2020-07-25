@@ -363,6 +363,12 @@
       if (TrackUI.settings.pollingMs > 0 && TrackUI.settings.pollingEvents.indexOf(eventName) > -1) {
         register = (timeNow - _time >= TrackUI.settings.pollingMs);
       }
+      // set scroll speed to 0 if no scroll
+      if(eventName == "scroll") {
+        TrackUI.states.scrollSpeed = checkScrollSpeed();
+      } else {
+        TrackUI.states.scrollSpeed = 0;
+      }
       if (register) {
         const TrackUIRec = TrackUI.states;
         let eventID = _allEvents.indexOf(TrackUIRec.eventName);
