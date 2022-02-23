@@ -5,7 +5,7 @@ The tracking is now based on regular timesteps.
 So the recording is not just triggered on "mouse move" but happens continuously. 
 
 This enables likewise a more detailed recording of pauses through the repetition of the same coordinates.  
-Multiple recursive machine learning models require regular time steps, so we so not have to interpolate.
+Multiple recursive machine learning models require regular time steps, so we do not have to interpolate.
 
 Events are recorded and stored in TrackUI.states.
 Furthermore, scroll speed will be also recorded. 
