@@ -1,13 +1,21 @@
 # evtrack
 
-Event tracking on websites using plain old JavaScript.
-No third-party libraries or external dependencies. :smiley:
+## Changes made in the forked version:
+The tracking is now based on regular timesteps. 
+So the recording is not just triggered on "mouse move" but happens continuously. 
 
-## Forked version
-Record events in regular timestamps. This enables likewise a more detailed recording of pauses through the repetition of the same coordinates. 
-Events are recorded and stored in  TrackUI.states.
+This enables likewise a more detailed recording of pauses through the repetition of the same coordinates.  
+Multiple recursive machine learning models require regular time steps, so we so not have to interpolate.
+
+Events are recorded and stored in TrackUI.states.
 Furthermore, scroll speed will be also recorded. 
 
+----
+
+---- original evtrack README -----
+
+Event tracking on websites using plain old JavaScript.
+No third-party libraries or external dependencies. :smiley:
 
 ## Usage
 
