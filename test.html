@@ -5,32 +5,26 @@
   <title>Test</title>
   <!-- Use the minified version in production sites -->
   <!-- For testing you can point to: js/src/load.js -->
-  <script src="js/load.min.js"></script>
+  <script src="js/src/load.js"></script>
   <script>
   (function(){
 
     // Please read js/src/trackui.js for the API and code documentation.
+    /*pollingEvents: "mousedown mouseup mousemove mouseover mouseout dblclick scroll",*/
     TrackUI.record({
+      // Remember to point to save.php (or similar) to write the log files.
       debug: true,
-
-      // Example: track all clicks and poll mouse movements at 50 ms
-      //regularEvents: "click",
-      //pollingEvents: "mousemove",
-      //pollingMs: 50,
-
-      // Example: pure event polling at 500 ms
-      //regularEvents: "",
-      //pollingEvents: "*",
-      //pollingMs: 500,
-
-      postServer: "save.php"
+      postServer: "save.php",
+      pollingEvents: "*",
+      pollingMs: 150,
+      taskName: "test"
     });
 
   })();
   </script>
 </head>
 
-<body class="none">
+<body class="none" style="height: 2000px; width: 2000px">
 
 <h1 id="f" title="lorem">Lorem ipsum dolor sit amet</h1>
 
@@ -38,7 +32,7 @@
 
 <h2>Sed eu eleifend metus.</h2>
 
-<p>Curabitur eget orci nunc, <a href="#res">porta vestibulum risus</a>. Nam metus quam, pretium in accumsan et, malesuada luctus nunc.</p>
+<p>Curabitur eget orci nunc, <a href="#">porta vestibulum risus</a>. Nam metus quam, pretium in accumsan et, malesuada luctus nunc.</p>
 
 <ul>
   <li>Sed eu eleifend metus.</li>
