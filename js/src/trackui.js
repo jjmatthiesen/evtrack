@@ -1,43 +1,19 @@
 /*! evtrack -- UI module */
-(function(window){
-    let  checkScrollSpeed = (function(settings){
-    settings = settings || {};
-
-    let lastPos, newPos, timer, delta,
-        delay = settings.delay || 50; // in "ms" (higher means lower fidelity )
-
-    function clear() {
-      lastPos = null;
-      delta = 0;
-    }
-
-    clear();
-
-    return function(){
-      newPos = window.scrollY;
-      if ( lastPos != null ){ // && newPos < maxScroll
-        delta = newPos -  lastPos;
-      }
-      lastPos = newPos;
-      clearTimeout(timer);
-      timer = setTimeout(clear, delay);
-      return delta;
-    };
-    })();
+(function (window) {
 
     let document = window.document;
 
     // mousewheel can even be triggered if no scroll is available or the page is on the top/bottom.
     // it overrides the scroll event. Therefore it is was removed from the standard events.
-      const _mouseEvents = "pause mousedown mouseup mousemove mouseover mouseout mouseenter click dblclick ";
-      const _touchEvents = "touchstart touchend touchmove ";
-      const _keyboardEvents = "keydown keyup keypress ";
-      const _documentEvents = "scroll change select submit reset contextmenu cut copy paste";
+    const _mouseEvents = "pause mousedown mouseup mousemove mouseover mouseout mouseenter click dblclick ";
+    const _touchEvents = "touchstart touchend touchmove ";
+    const _keyboardEvents = "keydown keyup keypress ";
+    const _documentEvents = "scroll change select submit reset contextmenu cut copy paste";
 
     // Define default events, as if they were set in `settings` object
-    let _docEvents  = _mouseEvents + _touchEvents + _keyboardEvents + _documentEvents;
+    let _docEvents = _mouseEvents + _touchEvents + _keyboardEvents + _documentEvents;
 
-    let _winEvents  = "load unload beforeunload blur focus resize error online offline";
+    let _winEvents = "load unload beforeunload blur focus resize error online offline";
     // Convert these event lists to actual array lists
     _docEvents = _docEvents.split(" ");
     _winEvents = _winEvents.split(" ");
@@ -78,7 +54,7 @@
             // The interval (in seconds) to post data to the server.
             postInterval: 30,
             // Events to be tracked whenever the browser fires them. Default:
-            //      mouse-related: "mousedown mouseup mousemove mouseover mouseout mousewheel click dblclick"
+            //      mouse-related: "mousedown mouseup mousemove mouseover mouseout click dblclick"
             //      touch-related: "touchstart touchend touchmove"
             //   keyboard-related: "keydown keyup keypress"
             //     window-related: "load unload beforeunload blur focus resize error online offline"
@@ -86,6 +62,7 @@
             // If this property is empty, no events will be tracked.
             // Use space-separated values to indicate multiple events, e.g. "click mousemove touchmove".
             // The "*" wildcard can be used to specify all events.
+            // recommended setting for mouse tracking: "mouseover mouseout mouseenter mousedown mouseup".
             regularEvents: '*',
             // Events to be polled, because some events are not always needed (e.g. mousemove).
             // If this property is empty (default value), no events will be polled.
@@ -93,9 +70,10 @@
             // The "*" wildcard can be used to specify all events.
             // Events in pollingEvents will override those specified in regularEvents.
             // You can leave regularEvents empty and use only pollingEvents, if need be.
+            // recommended setting: "mousemove scroll". Just for those it makes sense to be polled.
             pollingEvents: '',
-            // Sampling frequency (in ms) to register events.
-            // If set to 0, every single event will be recorded.
+            // Sampling frequency (in ms) to register events (40ms = 25fps).
+            // If set to 0 and polling Events are empty, every single event will be recorded.
             pollingMs: 150,
             // A name that identifies the current task.
             // Useful to filter logs by e.g. tracking campaign ID.
@@ -107,22 +85,20 @@
             // Enable this to display some debug information
             debug: false,
         },
-      /**
-       * Additional settings for the record of events.
-       */
-      states: {
-        i: 0,
-        rec: null,
-        paused: false,
-        timeout: null,
-        clicked: false,
-        coords: { clientX:0, clientY:0 , pageX:0, pageY: 0},
-        elemXpath: null,
-        elemAttrs: null,
-        eventName: null,
-        scrollSpeed: 0,
-        delta: undefined
-      },
+        /**
+         * Additional settings for the record of events in regular time steps.
+         */
+        states: {
+            i: 0,
+            rec: null,
+            paused: false,
+            timeout: null,
+            coords: {clientX: 0, clientY: 0, pageX: 0, pageY: 0},
+            elemXpath: null,
+            elemAttrs: null,
+            eventName: null,
+            scrollSpeed: 0
+        },
         /**
          * Init method.
          * @memberof TrackUI
@@ -130,94 +106,87 @@
          * @see TrackUI.settings
          * @return {void}
          */
-        record: function(config) {
-          _time = new Date().getTime();
-          // Override settings
-          for (let prop in TrackUI.settings) {
-            if (config.hasOwnProperty(prop) && config[prop] !== null) {
-              TrackUI.settings[prop] = config[prop];
+        record: function (config) {
+            _time = new Date().getTime();
+            // Override settings
+            for (let prop in TrackUI.settings) {
+                if (config.hasOwnProperty(prop) && config[prop] !== null) {
+                    TrackUI.settings[prop] = config[prop];
+                }
             }
-          }
-          TrackUI.log("Recording starts...", _time, TrackUI.settings);
-          TrackUI.addEventListeners();
+            TrackUI.log("Recording starts...", _time, TrackUI.settings);
+            TrackUI.addEventListeners();
 
-          // Todo: if polling in MS is given we want to track in regular time stamps. Otherwise just when the event occurs.
-          /*if (TrackUI.settings.pollingMs > 0 ) {
-              // track in a regular time stamp
-          }*/
-          const interval = Math.round(TrackUI.settings.pollingMs);
-          TrackUI.rec   = setInterval(TrackUI.recMouse, interval);
-          setTimeout(function(){
-            TrackUI.initNewData(true);
-          }, TrackUI.settings.postInterval*1000);
-        },
-      /**
-       * Pauses recording.
-       * The mouse activity is tracked only when the current window has focus.
-       */
-      pauseRecording: function()
-      {
-        TrackUI.states.paused = true;
-      },
-      /**
-       * Resumes recording. The current window gain focus.
-       */
-      resumeRecording: function()
-      {
-        TrackUI.states.paused = false;
-      },
-      /**
-       * Records mouse data using a regular time interval (TrackUI.pollingMs)
-       */
-      recMouse: function() {
-        const TrackUIRec = TrackUI.states;
-        const timeNow  = new Date().getTime();
-        if (TrackUIRec.paused) {
-          return;
-        }
-        if(TrackUIRec.eventName != null && TrackUIRec.eventName !== 'load') {
-          // if a timeout is set, just track until it is over. If no timeout is set, track infinite amount of time
-          if(TrackUIRec.timeout) {
-            while (TrackUIRec.i <= TrackUIRec.timeout) {
-              TrackUI.fillInfo(
-                  timeNow,
-                  TrackUIRec.coords.clientX,
-                  TrackUIRec.coords.clientY,
-                  TrackUIRec.coords.pageX,
-                  TrackUIRec.coords.pageY ,
-                  TrackUIRec.clicked,
-                  TrackUIRec.eventName,
-                  TrackUIRec.scrollSpeed,
-                  TrackUIRec.elemXpath,
-                  TrackUIRec.elemAttrs);
+            // Todo: if polling in MS is given we want to track in regular time stamps. Otherwise just when the event occurs.
+            if (TrackUI.settings.pollingMs > 0) {
+                const interval = Math.round(TrackUI.settings.pollingMs);
+                TrackUI.rec = setInterval(TrackUI.recMouse, interval);
             }
-          } else {
+            setTimeout(function () {
+                TrackUI.initNewData(true);
+            }, TrackUI.settings.postInterval * 1000);
+        },
+        /**
+         * Pauses recording.
+         * The mouse activity is tracked only when the current window has focus.
+         */
+        pauseRecording: function () {
+            TrackUI.states.paused = true;
+        },
+        /**
+         * Resumes recording. The current window gain focus.
+         */
+        resumeRecording: function () {
+            TrackUI.states.paused = false;
+        },
+        /**
+         * Read the state and fills and logs the information.
+         */
+        readFromState: function (TrackUIRec, timeNow) {
             TrackUI.fillInfo(
                 timeNow,
                 TrackUIRec.coords.clientX,
                 TrackUIRec.coords.clientY,
                 TrackUIRec.coords.pageX,
                 TrackUIRec.coords.pageY,
-                TrackUIRec.clicked,
                 TrackUIRec.eventName,
                 TrackUIRec.scrollSpeed,
                 TrackUIRec.elemXpath,
                 TrackUIRec.elemAttrs);
-          }
-        }
-        //reset event name (in case there is no action/ movement after e.g. a click)
-        TrackUIRec.eventName = "pause";
-        TrackUIRec.scrollSpeed = 0;
-        TrackUIRec.i++ ;
-      },
+        },
+        /**
+         * Records mouse data using a regular time interval (TrackUI.pollingMs)
+         */
+        recMouse: function () {
+            const TrackUIRec = TrackUI.states;
+            const timeNow = new Date().getTime();
+            if (TrackUIRec.paused) {
+                return;
+            }
+            if (TrackUIRec.eventName != null && TrackUIRec.eventName !== 'load') {
+                // if a timeout is set, just track until it is over. If no timeout is set, track infinite amount of time
+                if (TrackUIRec.timeout) {
+                    while (TrackUIRec.i <= TrackUIRec.timeout) {
+                        TrackUI.readFromState(TrackUIRec, timeNow);
+                    }
+                } else {
+                    TrackUI.readFromState(TrackUIRec, timeNow);
+                }
+            }
+            //reset event name (in case there is no action/ movement after e.g. a click)
+            TrackUIRec.eventName = "pause";
+            TrackUIRec.scrollSpeed = 0;
+            TrackUIRec.i++;
+        },
         /**
          * Register event listeners.
          * @memberof TrackUI
          * @return {void}
          */
-        addEventListeners: function() {
+        addEventListeners: function () {
             if (TrackUI.settings.regularEvents === '*') {
                 TrackUI.addCustomEventListeners(_allEvents);
+                TrackUI.settings.regularEvents = _allEvents
             } else {
                 TrackUI.log('Settings regular events...');
                 TrackUI.settings.regularEvents = TrackUI.settings.regularEvents.split(' ');
@@ -230,13 +199,16 @@
                 TrackUI.log('Settings polling events...');
                 TrackUI.settings.pollingEvents = TrackUI.settings.pollingEvents.split(' ');
                 TrackUI.addCustomEventListeners(TrackUI.settings.pollingEvents);
+                // if pollingEvents events are set, subtract them from regular events
+                TrackUI.settings.regularEvents = TrackUI.settings.regularEvents.filter(item => !TrackUI.settings.pollingEvents.includes(item));
             }
-          document.addEventListener('mouseleave', (event) => {
-            TrackUI.pauseRecording();
-          },false);
-          document.addEventListener('mouseenter', (event) => {
-            TrackUI.resumeRecording();
-          },false);
+
+            document.addEventListener('mouseleave', (event) => {
+                TrackUI.pauseRecording();
+            }, false);
+            document.addEventListener('mouseenter', (event) => {
+                TrackUI.resumeRecording();
+            }, false);
 
             // Flush data on closing the window/tab
             TrackLib.Events.add(window, 'beforeunload', TrackUI.flush);
@@ -248,7 +220,7 @@
          * @param {array} eventList - List of DOM events (strings)
          * @return {void}
          */
-        addCustomEventListeners: function(eventList) {
+        addCustomEventListeners: function (eventList) {
             TrackUI.log('Adding event listeners:', eventList);
             for (let i = 0; i < eventList.length; ++i) {
                 let ev = eventList[i];
@@ -274,7 +246,7 @@
          * @param {boolean} async - Whether the request should be asynchronous or not
          * @return {void}
          */
-        initNewData: function(async) {
+        initNewData: function (async) {
             let win = TrackLib.Dimension.getWindowSize();
             let doc = TrackLib.Dimension.getDocumentSize();
             let data = {
@@ -313,13 +285,13 @@
          * @param {object} xhr - XHR response object
          * @return {void}
          */
-        setUserId: function(xhr) {
+        setUserId: function (xhr) {
             _uid = xhr.responseText;
             TrackUI.log('setUserId:', _uid);
             if (_uid) {
-                setInterval(function() {
+                setInterval(function () {
                     TrackUI.appendData(true);
-                }, TrackUI.settings.postInterval*1000);
+                }, TrackUI.settings.postInterval * 1000);
             }
         },
         /**
@@ -328,7 +300,7 @@
          * @param {boolean} async - Whether the request should be asynchronous or not
          * @return {void}
          */
-        appendData: function(async) {
+        appendData: function (async) {
             let data = {
                 uid: _uid,
                 info: encodeURIComponent(_info.join(INFO_SEPARATOR)),
@@ -358,7 +330,7 @@
          * @param {object} req - XHR request
          * @return {void}
          */
-        send: function(req) {
+        send: function (req) {
             req.url = TrackUI.settings.postServer;
             TrackLib.XHR.sendAjaxRequest(req);
         },
@@ -368,7 +340,7 @@
          * @param {object} e - DOM event
          * @return {void}
          */
-        docHandler: function(e) {
+        docHandler: function (e) {
             if (e.type.indexOf('touch') > -1) {
                 TrackUI.touchHandler(e);
             } else {
@@ -381,7 +353,7 @@
          * @param {object} e - DOM event
          * @return {void}
          */
-        winHandler: function(e) {
+        winHandler: function (e) {
             TrackUI.eventHandler(e);
         },
         /**
@@ -390,40 +362,41 @@
          * @param {object} e - DOM event
          * @return {void}
          */
-        eventHandler: function(e) {
-          e = TrackLib.Events.fix(e);
+        eventHandler: function (e) {
+            e = TrackLib.Events.fix(e);
 
-          if ('isTrusted' in e && !e.isTrusted) return;
+            if ('isTrusted' in e && !e.isTrusted) return;
 
-          let timeNow  = new Date().getTime(),
-              eventName = e.type,
-              register = true;
-          const pollingEvent =  (TrackUI.settings.pollingEvents === "*" ? _allEvents: TrackUI.settings.pollingEvents );
-          if (TrackUI.settings.pollingMs > 0 && pollingEvent.indexOf(eventName) > -1) {
+            let timeNow = new Date().getTime(),
+                eventName = e.type,
+                register = true;
+            const regularEvents = TrackUI.settings.regularEvents;
+            const pollingEvent = (TrackUI.settings.pollingEvents === "*" ? _allEvents : TrackUI.settings.pollingEvents);
+            /*if (TrackUI.settings.pollingMs > 0 && pollingEvent.indexOf(eventName) > -1) {
             register = (timeNow - _time >= TrackUI.settings.pollingMs);
-          }
-          // set scroll speed to 0 if no scroll
-          if(eventName === "scroll") {
-            TrackUI.states.scrollSpeed = checkScrollSpeed();
-          } else {
-            TrackUI.states.scrollSpeed = 0;
-          }
-          if (register) {
+            }*/
+            // set scroll speed to 0 if no scroll
+            if (eventName === "scroll") {
+                TrackUI.states.scrollSpeed = checkScrollSpeed();
+            } else {
+                TrackUI.states.scrollSpeed = 0;
+            }
             const TrackUIRec = TrackUI.states;
             let cursorPos = TrackUI.getMousePos(e, TrackUI.states.coords)
                 , elemXpath = TrackLib.XPath.getXPath(e.target, false)
                 , elemAttrs = TrackUI.settings.saveAttributes ? TrackLib.Util.serializeAttrs(e.target) : '{}'
                 , extraInfo = {}
             ;
+            // console.log(cursorPos);
             if (typeof TrackUI.settings.callback === 'function') {
                 extraInfo = TrackUI.settings.callback(e);
             }
 
+            // for polling events: save occurrence in a state, then read from state in regular time steps
             if (pollingEvent.indexOf(eventName) > -1) {
                 // update states, then read states in regular time intervals -> recMouse()
                 TrackUIRec.elemXpath = elemXpath;
                 TrackUIRec.elemAttrs = elemAttrs;
-                TrackUIRec.clicked = eventName === 'mousedown';
                 TrackUIRec.eventName = eventName;
                 TrackUIRec.extraInfo = extraInfo;
                 TrackUIRec.coords.pageX = cursorPos.pageX;
@@ -432,12 +405,13 @@
                 TrackUIRec.coords.clientY = cursorPos.clientY;
 
             }
+            // for all regular events: log events on occurrence
             // log additional document and window events (not in regular timestamps)
-            if (_docEvents.includes(eventName) || _winEvents.includes(eventName)) {
-              // TrackUI.fillInfo(timeNow, cursorPos.x, cursorPos.y, TrackUIRec.clicked , TrackUIRec.eventName, TrackUIRec.scrollSpeed, elemXpath, elemAttrs);
-              _time = timeNow;
+            if (regularEvents.includes(eventName)) {
+                // console.log(e);
+                TrackUI.fillInfo(timeNow, cursorPos.clientX, cursorPos.clientY, cursorPos.pageX, cursorPos.pageY, eventName, elemXpath, elemAttrs, extraInfo);
             }
-          }
+            _time = timeNow;
         },
         /**
          * Callback for touch event listeners.
@@ -445,7 +419,7 @@
          * @param {object} e - DOM event
          * @return {void}
          */
-        touchHandler: function(e) {
+        touchHandler: function (e) {
             e = TrackLib.Events.fix(e);
 
             if ('isTrusted' in e && !e.isTrusted) return;
@@ -464,7 +438,7 @@
          * @param {{clientY: number, clientX: number, pageY: number, pageX: number}} oldCoords
          * @return {{clientY: number, clientX: number, pageY: number, pageX: number}} pos - Coordinates
          */
-        getMousePos: function(e, oldCoords) {
+        getMousePos: function (e, oldCoords) {
             e = TrackLib.Events.fix(e);
 
             // Important things to keep in mind (!):
@@ -484,7 +458,7 @@
 
             // on scroll we just want to update the mouse position in the page
             // an scroll event does not return the clientX/clientY position! So we return the old coordinates
-            if  (e.type === "scroll") {
+            if (e.type === "scroll") {
                 if (typeof window.pageYOffset !== 'undefined') {
                     positionPage.y = window.pageYOffset + oldCoords.clientY;
                 }
@@ -508,18 +482,18 @@
              */
             return {clientX: positionClient.x, clientY: positionClient.y, pageX: positionPage.x, pageY: positionPage.y};
         },
-      /**
-       * Fills in a log data row.
-       * @param {number} id      Cursor ID
-       * @param {number} time    Current timestamp
-       * @param {number} posX    Cursor X position
-       * @param {number} posY    Cursor Y position
-       * @param {string}  event   Related event name
-       * @param {string}  xpath   Related element in XPath notation
-       * @param {string}  attrs   Serialized node attributes
-       * @return void
-       */
-        fillInfo: function() {
+        /**
+         * Fills in a log data row.
+         * @param {number} id      Cursor ID
+         * @param {number} time    Current timestamp
+         * @param {number} posX    Cursor X position
+         * @param {number} posY    Cursor Y position
+         * @param {string}  event   Related event name
+         * @param {string}  xpath   Related element in XPath notation
+         * @param {string}  attrs   Serialized node attributes
+         * @return void
+         */
+        fillInfo: function () {
             let args = [].slice.apply(arguments);
             _info.push(args.join(ARGS_SEPARATOR));
             TrackUI.log(args);
@@ -529,7 +503,7 @@
          * @memberof TrackUI
          * @return {void}
          */
-        flush: function() {
+        flush: function () {
             TrackUI.log('Flushing data...');
             let i;
             for (i = 0; i < _docEvents.length; ++i) {
@@ -552,7 +526,7 @@
          * @param {any} args - Any number of arguments
          * @return {void}
          */
-        log: function(args) {
+        log: function (args) {
             if (TrackUI.settings.debug && typeof console.log === 'function') {
                 console.log.apply(console, arguments);
             }

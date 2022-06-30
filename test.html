@@ -15,8 +15,10 @@
       // Remember to point to save.php (or similar) to write the log files.
       debug: true,
       postServer: "save.php",
-      pollingEvents: "*",
-      pollingMs: 150,
+      regularEvents: "mouseover mouseout mouseenter mousedown mouseup",
+      pollingEvents: "mousemove scroll",
+      // equals 25 fps
+      pollingMs: 40,
       taskName: "test"
     });
 

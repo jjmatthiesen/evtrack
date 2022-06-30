@@ -20,6 +20,31 @@
  * @version 0.3
  * @license Dual licensed under the MIT and GPL licenses.
  */
+let  checkScrollSpeed = (function(settings){
+    settings = settings || {};
+
+    let lastPos, newPos, timer, delta,
+        delay = settings.delay || 50; // in "ms" (higher means lower fidelity )
+
+    function clear() {
+        lastPos = null;
+        delta = 0;
+    }
+
+    clear();
+
+    return function(){
+        newPos = window.scrollY;
+        if ( lastPos != null ){ // && newPos < maxScroll
+            delta = newPos -  lastPos;
+        }
+        lastPos = newPos;
+        clearTimeout(timer);
+        timer = setTimeout(clear, delay);
+        return delta;
+    };
+})();
+
 var TrackLib = window.TrackLib || {};
 /**
  * XPath functions.
