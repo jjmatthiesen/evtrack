@@ -97,7 +97,8 @@
             elemXpath: null,
             elemAttrs: null,
             eventName: null,
-            scrollSpeed: 0
+            scrollSpeed: 0,
+            extraInfo: null,
         },
         /**
          * Init method.
@@ -117,8 +118,7 @@
             TrackUI.log("Recording starts...", _time, TrackUI.settings);
             TrackUI.addEventListeners();
 
-            // Todo: if polling in MS is given we want to track in regular time stamps. Otherwise just when the event occurs.
-            if (TrackUI.settings.pollingMs > 0) {
+            if (TrackUI.settings.pollingEvents !== "" && TrackUI.settings.pollingMs > 0) {
                 const interval = Math.round(TrackUI.settings.pollingMs);
                 TrackUI.rec = setInterval(TrackUI.recMouse, interval);
             }
@@ -152,7 +152,8 @@
                 TrackUIRec.eventName,
                 TrackUIRec.scrollSpeed,
                 TrackUIRec.elemXpath,
-                TrackUIRec.elemAttrs);
+                TrackUIRec.elemAttrs,
+                TrackUIRec.extraInfo);
         },
         /**
          * Records mouse data using a regular time interval (TrackUI.pollingMs)
@@ -389,7 +390,7 @@
             ;
             // console.log(cursorPos);
             if (typeof TrackUI.settings.callback === 'function') {
-                extraInfo = TrackUI.settings.callback(e);
+                TrackUI.states.extraInfo = TrackUI.settings.callback(e);
             }
 
             // for polling events: save occurrence in a state, then read from state in regular time steps
@@ -408,8 +409,18 @@
             // for all regular events: log events on occurrence
             // log additional document and window events (not in regular timestamps)
             if (regularEvents.includes(eventName)) {
-                // console.log(e);
-                TrackUI.fillInfo(timeNow, cursorPos.clientX, cursorPos.clientY, cursorPos.pageX, cursorPos.pageY, eventName, elemXpath, elemAttrs, extraInfo);
+                TrackUI.fillInfo(
+                    timeNow,
+                    cursorPos.clientX,
+                    cursorPos.clientY,
+                    cursorPos.pageX,
+                    cursorPos.pageY,
+                    eventName,
+                    TrackUIRec.scrollSpeed,
+                    elemXpath,
+                    elemAttrs,
+                    TrackUI.states.extraInfo
+                );
             }
             _time = timeNow;
         },

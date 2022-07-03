@@ -72,9 +72,8 @@ if ($_POST['action'] == "init") {
 
   // Save data for the first time.
   // The column separator must match ARGS_SEPARATOR in trackui.js
-  //timeNow, cursorPos.x, cursorPos.y, false , eventID, TrackUIRec.scrollSpeed, elemXpath, elemAttrs
-  // $header = "cursor timestamp xpos ypos event xpath attrs extras" .PHP_EOL;
-  $header = "timestamp xpos ypos click mouseeventID scrollspeed xpath attrs" .PHP_EOL;
+  // timeNow, cursorPos.clientX, cursorPos.clientY, cursorPos.pageX, cursorPos.pageY, eventName, elemXpath, elemAttrs, extraInfo
+  $header = "timestamp clientX clientY pageX pageY eventName scrollSpeed elemXpath elemAttrs extraInfo" .PHP_EOL;
   file_put_contents(LOGDIR."/".$fid.LOGEXT, $header.$info_data);
 
   // Save metadata as XML. It could be any other format, actually
