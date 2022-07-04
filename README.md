@@ -153,8 +153,21 @@ For each browsed page, you'll have in the `logs` directory the following files:
 #### CSV file example
 
 ```csv
-timeNow clientX clientY pageX pageY eventName elemXpath elemAttrs extraInfo
-0 1405503114382 0 0 load / {}
+timeNow clientX clientY pageX pageY eventName scrollSpeed elemXpath elemAttrs extraInfo
+1656919678671    413    464    413    1051    "mousemove"    0    "/html/body"    "{\"BODY\":{\"class\":\"none\",\"style\":\"height: 2000px; width: 2000px\"}}"    {}
+
+[
+    1656919678671,
+    413,
+    464,
+    413,
+    1051,
+    "mousemove",
+    0,
+    "/html/body",
+    "{\"BODY\":{\"class\":\"none\",\"style\":\"height: 2000px; width: 2000px\"}}",
+    {}
+]
 ```
 Where:
 * The `timestamp` column indicates the timestamp of the event, with millisecond precision.
@@ -174,23 +187,3 @@ Where:
 ---- original evtrack README -----
 https://github.com/luileito/evtrack/#readme
 
-#### Citation
-
-If you use this software in any academic project, please cite it as:
-
-* Leiva, L.A. and Vivó, R. Web Browsing Behavior Analysis and Interactive Hypervideo. _ACM Transactions on the Web_ **7**(4), 2013.
-```bibtex
-@Article{Leiva13-tweb,
- author   = {Luis A. Leiva and Roberto Viv\'o},
- title    = {Web Browsing Behavior Analysis and Interactive Hypervideo},
- journal  = {ACM Transactions on the Web},
- volume   = {7},
- number   = {4},
- year     = {2013},
-}
-```
-
-## License
-
-This software is dual-licensed under the MIT and LGPL v3 licenses.
-See the [license](https://github.com/luileito/evtrack/blob/master/license) dir.
