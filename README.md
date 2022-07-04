@@ -156,18 +156,6 @@ For each browsed page, you'll have in the `logs` directory the following files:
 timeNow clientX clientY pageX pageY eventName scrollSpeed elemXpath elemAttrs extraInfo
 1656919678671    413    464    413    1051    "mousemove"    0    "/html/body"    "{\"BODY\":{\"class\":\"none\",\"style\":\"height: 2000px; width: 2000px\"}}"    {}
 
-[
-    1656919678671,
-    413,
-    464,
-    413,
-    1051,
-    "mousemove",
-    0,
-    "/html/body",
-    "{\"BODY\":{\"class\":\"none\",\"style\":\"height: 2000px; width: 2000px\"}}",
-    {}
-]
 ```
 Where:
 * The `timestamp` column indicates the timestamp of the event, with millisecond precision.
