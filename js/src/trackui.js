@@ -21,7 +21,7 @@
     let _allEvents = _docEvents.concat(_winEvents);
 
     // Arguments separator for the logged data
-    let ARGS_SEPARATOR = ' ';
+    let ARGS_SEPARATOR = ', ';
     // This one must match that of save.php (INFSEP)
     let INFO_SEPARATOR = '|||';
 
@@ -98,7 +98,7 @@
             elemAttrs: null,
             eventName: null,
             scrollSpeed: 0,
-            extraInfo: null,
+            extraInfo: {},
         },
         /**
          * Init method.
@@ -143,17 +143,19 @@
          * Read the state and fills and logs the information.
          */
         readFromState: function (TrackUIRec, timeNow) {
-            TrackUI.fillInfo(
-                timeNow,
-                TrackUIRec.coords.clientX,
-                TrackUIRec.coords.clientY,
-                TrackUIRec.coords.pageX,
-                TrackUIRec.coords.pageY,
-                TrackUIRec.eventName,
-                TrackUIRec.scrollSpeed,
-                TrackUIRec.elemXpath,
-                TrackUIRec.elemAttrs,
-                TrackUIRec.extraInfo);
+            if (TrackUIRec.elemXpath) {
+                TrackUI.fillInfo(
+                    timeNow,
+                    TrackUIRec.coords.clientX,
+                    TrackUIRec.coords.clientY,
+                    TrackUIRec.coords.pageX,
+                    TrackUIRec.coords.pageY,
+                    TrackUIRec.eventName,
+                    TrackUIRec.scrollSpeed,
+                    TrackUIRec.elemXpath,
+                    TrackUIRec.elemAttrs,
+                    JSON.stringify(TrackUI.states.extraInfo));
+            }
         },
         /**
          * Records mouse data using a regular time interval (TrackUI.pollingMs)
@@ -247,36 +249,27 @@
          * @param {boolean} async - Whether the request should be asynchronous or not
          * @return {void}
          */
-        initNewData: function (async) {
-            let win = TrackLib.Dimension.getWindowSize();
-            let doc = TrackLib.Dimension.getDocumentSize();
-            let data = {
-                url: encodeURIComponent(window.location.href),
-                screenw: screen.width,
-                screenh: screen.height,
-                winw: win.width,
-                winh: win.height,
-                docw: doc.width,
-                doch: doc.height,
-                info: encodeURIComponent(_info.join(INFO_SEPARATOR)),
-                task: encodeURIComponent(TrackUI.settings.taskName),
-                // cookies: encodeURIComponent(document.cookie),
-                action: 'init',
-            };
-            // Try newer browser APIs for async Ajax requests
-            // NB: the data is sent as text/plain
-            if (!async && typeof navigator.sendBeacon === 'function') {
-                data.beacon = true;
-                let params = JSON.stringify(data);
-                navigator.sendBeacon(TrackUI.settings.postServer, params);
-            } else {
-                // Send request
-                TrackUI.send({
-                    async: async,
-                    postdata: data,
-                    callback: TrackUI.setUserId,
-                });
-            }
+        initNewData: function(async) {
+            var win = TrackLib.Dimension.getWindowSize(),
+                doc = TrackLib.Dimension.getDocumentSize(),
+                data  = "url="      + encodeURIComponent(window.location.href);
+            data += "&screenw=" + screen.width;
+            data += "&screenh=" + screen.height;
+            data += "&winw="    + win.width;
+            data += "&winh="    + win.height;
+            data += "&docw="    + doc.width;
+            data += "&doch="    + doc.height;
+            data += "&info="    + encodeURIComponent(_info.join(INFO_SEPARATOR));
+            data += "&task="    + encodeURIComponent(TrackUI.settings.taskName);
+            //data += "&layout="  + TrackUI.settings.layoutType;
+            //data += "&cookies=" + document.cookie;
+            data += "&action="  + "init";
+            // Send request
+            TrackUI.send({
+                async:    async,
+                postdata: data,
+                callback: TrackUI.setUserId
+            });
             // Clean up
             _info = [];
         },
@@ -301,27 +294,16 @@
          * @param {boolean} async - Whether the request should be asynchronous or not
          * @return {void}
          */
-        appendData: function (async) {
-            let data = {
-                uid: _uid,
-                info: encodeURIComponent(_info.join(INFO_SEPARATOR)),
-                action: 'append',
-            };
-            // Try newer browser APIs for async Ajax requests
-            // NB: the data is sent as text/plain
-            if (!async && typeof navigator.sendBeacon === 'function') {
-                data.beacon = true;
-                let params = JSON.stringify(data);
-                navigator.sendBeacon(TrackUI.settings.postServer, params);
-            } else if (_info.length > 0) {
-                // Send request
-                TrackUI.send({
-                    async: async,
-                    postdata: data,
-                });
-            } else {
-                TrackUI.log('Skipping empty request...');
-            }
+        appendData: function(async) {
+            TrackUI.log("appendUserDataTo:", _uid);
+            var data  = "uid="     + _uid;
+            data += "&info="   + encodeURIComponent(_info.join(INFO_SEPARATOR));
+            data += "&action=" + "append";
+            // Send request
+            TrackUI.send({
+                async:    async,
+                postdata: data
+            });
             // Clean up
             _info = [];
         },
@@ -408,19 +390,21 @@
             }
             // for all regular events: log events on occurrence
             // log additional document and window events (not in regular timestamps)
-            if (regularEvents.includes(eventName)) {
-                TrackUI.fillInfo(
-                    timeNow,
-                    cursorPos.clientX,
-                    cursorPos.clientY,
-                    cursorPos.pageX,
-                    cursorPos.pageY,
-                    eventName,
-                    TrackUIRec.scrollSpeed,
-                    elemXpath,
-                    elemAttrs,
-                    TrackUI.states.extraInfo
-                );
+            if (elemXpath) {
+                if (regularEvents.includes(eventName)) {
+                    TrackUI.fillInfo(
+                        timeNow,
+                        cursorPos.clientX,
+                        cursorPos.clientY,
+                        cursorPos.pageX,
+                        cursorPos.pageY,
+                        eventName,
+                        TrackUIRec.scrollSpeed,
+                        elemXpath,
+                        elemAttrs,
+                        JSON.stringify(TrackUI.states.extraInfo)
+                    );
+                }
             }
             _time = timeNow;
         },
