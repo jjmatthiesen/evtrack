@@ -372,7 +372,7 @@
             ;
             // console.log(cursorPos);
             if (typeof TrackUI.settings.callback === 'function') {
-                TrackUI.states.extraInfo = TrackUI.settings.callback(e);
+                extraInfo = TrackUI.settings.callback(e);
             }
 
             // for polling events: save occurrence in a state, then read from state in regular time steps
@@ -518,7 +518,7 @@
         /**
          * Show debug information in the JS console.
          * @memberof TrackUI
-         * @param {any} args - Any number of arguments
+         * @param {any} args - Any number of arguments // ??
          * @return {void}
          */
         log: function (args) {

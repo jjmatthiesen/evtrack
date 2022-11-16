@@ -7,6 +7,9 @@
   <!-- For testing you can point to: js/src/load.js -->
   <script src="js/src/load.js"></script>
   <script>
+    function callbackTest(e) {
+      return ["edfgb", e.clientX]
+    }
   (function(){
 
     // Please read js/src/trackui.js for the API and code documentation.
@@ -19,7 +22,8 @@
       pollingEvents: "mousemove scroll",
       // equals 25 fps
       pollingMs: 40,
-      taskName: "test"
+      taskName: "test",
+      callback: callbackTest
     });
 
   })();
