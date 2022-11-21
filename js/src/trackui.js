@@ -78,6 +78,9 @@
             // A name that identifies the current task.
             // Useful to filter logs by e.g. tracking campaign ID.
             taskName: 'evtrack',
+            treatmentID: '',
+            instrumentID: '',
+            participantID: '',
             // A custom function to execute on each recording tick.
             callback: null,
             // Whether to dump element attributes together with each recorded event.
@@ -261,6 +264,9 @@
             data += "&doch="    + doc.height;
             data += "&info="    + encodeURIComponent(_info.join(INFO_SEPARATOR));
             data += "&task="    + encodeURIComponent(TrackUI.settings.taskName);
+            data += "&treatmentID="   + encodeURIComponent(TrackUI.settings.treatmentID);
+            data += "&instrumentID="   + encodeURIComponent(TrackUI.settings.instrumentID);
+            data += "&participantID="   + encodeURIComponent(TrackUI.settings.participantID);
             //data += "&layout="  + TrackUI.settings.layoutType;
             //data += "&cookies=" + document.cookie;
             data += "&action="  + "init";

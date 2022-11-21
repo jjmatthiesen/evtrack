@@ -87,6 +87,9 @@ if ($_POST['action'] == "init") {
   $xml .= ' <window>'.$_POST['winw'] .'x'. $_POST['winh'].'</window>' .PHP_EOL;
   $xml .= ' <document>'.$_POST['docw'] .'x'. $_POST['doch'].'</document>' .PHP_EOL;
   $xml .= ' <task>'.$_POST['task'].'</task>' .PHP_EOL;
+  $xml .= ' <treatmentID>'.$_POST['treatmentID'].'</treatmentID>' .PHP_EOL;
+  $xml .= ' <instrumentID>'.$_POST['instrumentID'].'</instrumentID>' .PHP_EOL;
+  $xml .= ' <participantID>'.$_POST['patientID'].'</participantID>' .PHP_EOL;
   $xml .= '</data>' .PHP_EOL;
   file_put_contents(LOGDIR."/".$fid.".xml", $xml);
 
