@@ -109,7 +109,7 @@ TrackLib.XPath = {
             var node = xNodePath[i];
             var nIdx;
             if (node.nodeType === 1) {
-                if (i == 0 && !absolute && node.hasAttribute('id')) {
+                if (i === "0" && !absolute && node.hasAttribute('id')) {
                     nodeNames.push('/*[@id=\'' + node.getAttribute('id') + '\']');
                 } else {
                     var tagName = node.tagName;
@@ -122,6 +122,9 @@ TrackLib.XPath = {
                     } else {
                         nodeNames.push(tagName);
                     }
+                }
+                if (node.hasAttribute('class')) {
+                    nodeNames[nodeNames.length -1] += ("." + node.classList[0])
                 }
             } else if (node.nodeType === 3) {
                 nIdx = this.getTextNodeIndex(node);
@@ -512,7 +515,14 @@ TrackLib.Util = {
             }
         }
 
-        return JSON.stringify(obj);
+        return obj;
+    },
+    serializePosition: function(elem) {
+        let obj = {};
+        if (elem && elem.attributes) {
+            obj = elem.getBoundingClientRect();
+        }
+      return JSON.stringify(obj)
     },
     /**
      * Serialize object as a query string.
