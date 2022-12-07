@@ -373,7 +373,7 @@
             const TrackUIRec = TrackUI.states;
             let cursorPos = TrackUI.getMousePos(e, TrackUI.states.coords)
                 , elemXpath = TrackLib.XPath.getXPath(e.target, false)
-                , elemAttrs = TrackUI.settings.saveAttributes ? TrackLib.Util.serializeAttrs(e.target) : '{}'
+                , elemAttrs = TrackUI.settings.saveAttributes ? TrackLib.Util.serializePosition(e.target) : '{}'
                 , extraInfo = {}
             ;
             // console.log(cursorPos);

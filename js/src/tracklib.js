@@ -522,7 +522,7 @@ TrackLib.Util = {
         if (elem && elem.attributes) {
             obj = elem.getBoundingClientRect();
         }
-      return JSON.stringify(obj)
+      return JSON.stringify(obj).replaceAll(",", ";")
     },
     /**
      * Serialize object as a query string.
