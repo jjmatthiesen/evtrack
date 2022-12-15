@@ -41,7 +41,7 @@ let  checkScrollSpeed = (function(settings){
         lastPos = newPos;
         clearTimeout(timer);
         timer = setTimeout(clear, delay);
-        return delta;
+        return parseInt(delta);
     };
 })();
 
