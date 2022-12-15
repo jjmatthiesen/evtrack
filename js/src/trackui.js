@@ -494,6 +494,7 @@
          * @param {string}  attrs   Serialized node attributes
          * @return void
          */
+        // todo: Change this to JSON?
         fillInfo: function () {
             let args = [].slice.apply(arguments);
             _info.push(args.join(ARGS_SEPARATOR));
