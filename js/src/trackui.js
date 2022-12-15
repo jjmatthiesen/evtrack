@@ -78,6 +78,7 @@
             // A name that identifies the current task.
             // Useful to filter logs by e.g. tracking campaign ID.
             taskName: 'evtrack',
+            assessmentID: '',
             treatmentID: '',
             instrumentID: '',
             participantID: '',
@@ -264,6 +265,7 @@
             data += "&doch="    + doc.height;
             data += "&info="    + encodeURIComponent(_info.join(INFO_SEPARATOR));
             data += "&task="    + encodeURIComponent(TrackUI.settings.taskName);
+            data += "&assessmentID="   + encodeURIComponent(TrackUI.settings.assessmentID);
             data += "&treatmentID="   + encodeURIComponent(TrackUI.settings.treatmentID);
             data += "&instrumentID="   + encodeURIComponent(TrackUI.settings.instrumentID);
             data += "&participantID="   + encodeURIComponent(TrackUI.settings.participantID);
