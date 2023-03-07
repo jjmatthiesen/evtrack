@@ -77,6 +77,7 @@
             pollingMs: 150,
             // A name that identifies the current task.
             // Useful to filter logs by e.g. tracking campaign ID.
+            disablePollingOnTouch: false,
             taskName: 'evtrack',
             assessmentID: '',
             treatmentID: '',
@@ -103,6 +104,7 @@
             eventName: null,
             scrollSpeed: 0,
             extraInfo: {},
+            isTouch: false
         },
         /**
          * Init method.
@@ -170,7 +172,7 @@
             if (TrackUIRec.paused) {
                 return;
             }
-            if (TrackUIRec.eventName != null && TrackUIRec.eventName !== 'load') {
+            if (TrackUIRec.eventName != null && TrackUIRec.eventName !== 'load' && (!TrackUI.states.isTouch)) {
                 // if a timeout is set, just track until it is over. If no timeout is set, track infinite amount of time
                 if (TrackUIRec.timeout) {
                     while (TrackUIRec.i <= TrackUIRec.timeout) {
@@ -210,12 +212,26 @@
                 TrackUI.settings.regularEvents = TrackUI.settings.regularEvents.filter(item => !TrackUI.settings.pollingEvents.includes(item));
             }
 
-            document.addEventListener('mouseleave', (event) => {
+            document.querySelector("html").addEventListener('mouseleave', (event) => {
                 TrackUI.pauseRecording();
             }, false);
-            document.addEventListener('mouseenter', (event) => {
+            document.querySelector("html").addEventListener('mouseenter', (event) => {
                 TrackUI.resumeRecording();
             }, false);
+            if (TrackUI.settings.disablePollingOnTouch) {
+                document.addEventListener('touchstart', (event) => {
+                    TrackUI.states.isTouch = true;
+                    // add polling events ro regular events and empty polling events
+                    // if device is classified as a touch device, we do not want to poll pauses of the non-existing mouse cursor
+                    TrackUI.settings.pollingEvents.forEach(ele => {
+                        if (TrackUI.settings.regularEvents.indexOf(ele) === -1) {
+                            TrackUI.settings.regularEvents += "," + ele;
+                        }
+                    })
+                    TrackUI.settings.pollingEvents = []
+                }, false);
+            }
+
 
             // Flush data on closing the window/tab
             TrackLib.Events.add(window, 'beforeunload', TrackUI.flush);

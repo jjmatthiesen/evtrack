@@ -3,8 +3,6 @@
 
 <head>
   <title>Test</title>
-  <!-- Use the minified version in production sites -->
-  <!-- For testing you can point to: js/src/load.js -->
   <script src="js/src/load.js"></script>
   <script>
   (function(){
@@ -15,10 +13,11 @@
       // Remember to point to save.php (or similar) to write the log files.
       debug: true,
       postServer: "save.php",
-      regularEvents: "mousedown mouseup",
+      regularEvents: "mousedown mouseup touchstart touchend touchmove",
       pollingEvents: "mousemove scroll",
       // equals 25 fps
       pollingMs: 40,
+      disablePollingOnTouch: true,
       taskName: "test",
       assessmentID: "A0000",
       treatmentID: "T0000",
